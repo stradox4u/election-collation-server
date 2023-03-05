@@ -1,0 +1,37 @@
+version: '3.7'
+services:
+  collation_db:
+    container_name: collation_db
+    profiles:
+      - dev
+      - prod
+    image: postgres
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - collation_data:/var/lib/postgresql/collation_data
+    tty: true
+    ports:
+      - 5432:5432
+  collation_server:
+    container_name: collation_server
+    profiles:
+      - dev
+      - prod
+    build:
+      context: .
+      target: base
+    env_file:
+      - .env
+    depends_on:
+      - collation_db
+    ports:
+      - 8000:8000
+    command: npm run start:dev
+
+volumes:
+  collation_data: null
