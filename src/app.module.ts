@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UnitResultModule } from './unit-result/unit-result.module';
+import { DayjsModule } from './dayjs/dayjs.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { UnitResultModule } from './unit-result/unit-result.module';
       isGlobal: true,
     }),
     UnitResultModule,
+    DayjsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

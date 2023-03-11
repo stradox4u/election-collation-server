@@ -12,12 +12,13 @@ datasource db {
 
 model PollingUnit {
   id  String  @default(uuid())  @id
-  state Int @unique
-  lga Int
-  ward  Int
-  puNumber Int
+  state String
+  lga String
+  ward  String
+  puNumber String
+  puName String
   createdAt DateTime  @default(now())
-  elections ElectionPollingUnits[]
+  elections ElectionPollingUnit[]
   unitResults UnitResult[]
 
   @@index([state, lga, ward, puNumber])
@@ -27,45 +28,46 @@ model Election {
   id  String  @default(uuid()) @id
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  electionType  String  @unique
-  electionDate  DateTime  @unique
-  pollinUnits ElectionPollingUnits[]
+  electionType  String
+  electionDate  DateTime
+  pollinUnits ElectionPollingUnit[]
   unitResults UnitResult[]
 
-  @@index([electionType])
+  @@index([electionType, electionDate])
 }
 
-model ElectionPollingUnits {
+model ElectionPollingUnit {
+  id  Int @id @default(autoincrement())
   election  Election  @relation(fields: [electionId], references: [id])
   electionId  String
   pollingUnit PollingUnit @relation(fields: [pollingunitId], references: [id])
   pollingunitId String
   assignedAt  DateTime  @default(now())
 
-  @@id([electionId, pollingunitId])
+  @@index([electionId, pollingunitId])
 }
 
 model UnitResult {
   id  String  @default(uuid())  @id
-  A Int @unique
-  AA  Int @unique
-  AAC Int @unique
-  ADC Int @unique
-  ADP Int @unique
-  APC Int @unique
-  APGA  Int @unique
-  APM Int @unique
-  APP Int @unique
-  BP  Int @unique
-  LP  Int @unique
-  NNPP  Int @unique
-  NRM Int @unique
-  PDP Int @unique
-  PRP Int @unique
-  SDP Int @unique
-  YPP Int @unique
-  ZLP Int @unique
-  resultImage String
+  A Int 
+  AA  Int 
+  AAC Int 
+  ADC Int 
+  ADP Int 
+  APC Int 
+  APGA  Int 
+  APM Int 
+  APP Int 
+  BP  Int 
+  LP  Int 
+  NNPP  Int 
+  NRM Int 
+  PDP Int 
+  PRP Int 
+  SDP Int 
+  YPP Int 
+  ZLP Int 
+  resultImage String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   pollingUnit PollingUnit @relation(fields: [pollingunitId], references: [id])
