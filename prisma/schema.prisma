@@ -49,24 +49,24 @@ model ElectionPollingUnit {
 
 model UnitResult {
   id  String  @default(uuid())  @id
-  A Int 
-  AA  Int 
-  AAC Int 
-  ADC Int 
-  ADP Int 
-  APC Int 
-  APGA  Int 
-  APM Int 
-  APP Int 
-  BP  Int 
-  LP  Int 
-  NNPP  Int 
-  NRM Int 
-  PDP Int 
-  PRP Int 
-  SDP Int 
-  YPP Int 
-  ZLP Int 
+  A Int?
+  AA  Int?
+  AAC Int?
+  ADC Int?
+  ADP Int?
+  APC Int?
+  APGA  Int?
+  APM Int?
+  APP Int?
+  BP  Int?
+  LP  Int?
+  NNPP  Int?
+  NRM Int?
+  PDP Int?
+  PRP Int?
+  SDP Int?
+  YPP Int?
+  ZLP Int?
   resultImage String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

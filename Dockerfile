@@ -7,8 +7,12 @@ RUN apt-get update
 RUN apt-get -y install \
     cmake
 
-RUN npm install --silent
+RUN npm ci --quiet
 COPY . .
+
+RUN npm run build
+
+RUN npx prisma generate
 
 # ENV NPM_CONFIG_PREFIX=/home/node/.npm-global
 # ENV PATH=$PATH:/home/node/.npm-global/bin

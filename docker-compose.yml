@@ -17,6 +17,7 @@ services:
     tty: true
     ports:
       - 5432:5432
+
   collation_server:
     container_name: collation_server
     profiles:
@@ -31,7 +32,23 @@ services:
       - collation_db
     ports:
       - 8000:8000
+    restart: unless-stopped
     command: npm run start:dev
+  
+  db_seeder:
+    container_name: db_seeder
+    profiles:
+      - seed
+    build:
+      context: .
+      target: base
+    env_file:
+      - .env
+    depends_on:
+      - collation_db
+    ports:
+      - 8000:8000
+    # command: npm run seed
 
 volumes:
   collation_data: null

@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Seeder } from 'nestjs-seeder';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { readFile } from 'fs/promises';
 import * as path from 'path';
 import { DayJsService } from '../dayjs/dayjs.service';
 
 @Injectable()
 export class ElectionSeeder implements Seeder {
-  prisma: PrismaService;
-  constructor(private readonly dayjs: DayJsService) {
-    this.prisma = new PrismaService();
-  }
+  constructor(
+    private prisma: PrismaService,
+    private readonly dayjs: DayJsService,
+  ) {}
 
   async seed(): Promise<void> {
     const dayjsInstance = this.dayjs.getDayJsInstance();

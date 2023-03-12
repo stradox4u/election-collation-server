@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UnitResultModule } from './unit-result/unit-result.module';
 import { DayjsModule } from './dayjs/dayjs.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { DayjsModule } from './dayjs/dayjs.module';
     }),
     UnitResultModule,
     DayjsModule,
+    PrismaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
