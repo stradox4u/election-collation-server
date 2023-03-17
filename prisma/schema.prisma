@@ -30,7 +30,7 @@ model Election {
   updatedAt DateTime  @updatedAt
   electionType  String
   electionDate  DateTime
-  pollinUnits ElectionPollingUnit[]
+  pollingUnits ElectionPollingUnit[]
   unitResults UnitResult[]
 
   @@index([electionType, electionDate])
