@@ -13,7 +13,7 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_DB=${DB_NAME}
     volumes:
-      - collation_data:/var/lib/postgresql/collation_data
+      - collation_data:/var/lib/postgresql/data
     tty: true
     ports:
       - 5432:5432
@@ -54,4 +54,4 @@ services:
     # command: npm run seed
 
 volumes:
-  collation_data: null
+  collation_data:

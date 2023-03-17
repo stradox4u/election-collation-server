@@ -1,5 +1,4 @@
 export interface CreateUnitResultDto {
-  id: string;
   A?: number;
   AA?: number;
   AAC?: number;
@@ -18,7 +17,7 @@ export interface CreateUnitResultDto {
   SDP?: number;
   YPP?: number;
   ZLP?: number;
-  resultImage?: string;
+  resultImage?: Express.Multer.File;
   pollingunitId: string;
   electionId: string;
 }

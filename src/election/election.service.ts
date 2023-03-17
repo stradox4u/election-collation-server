@@ -4,10 +4,11 @@ import { CreateElectionDto, PusQueryObject } from './election.types';
 
 @Injectable()
 export class ElectionService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async createElection(data: CreateElectionDto) {
     const { electionType, electionDate, electionArea } = data;
+
     const relatedPus: { id: string }[] = [];
 
     for (const area of electionArea) {

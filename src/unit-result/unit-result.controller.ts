@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  ParseFilePipeBuilder,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UnitResultService } from './unit-result.service';
 import { CreateUnitResultDto } from './unit-result.types';
 
@@ -7,8 +18,27 @@ export class UnitResultController {
   constructor(private readonly unitResultService: UnitResultService) {}
 
   @Post()
-  async saveResult(@Body() saveResultDto: CreateUnitResultDto) {
-    return this.unitResultService.saveUnitResult(saveResultDto);
+  @UseInterceptors(FileInterceptor('resultImage'))
+  async saveResult(
+    @Body() saveResultDto: CreateUnitResultDto,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: /(jpg|jpeg|png)$/,
+        })
+        .addMaxSizeValidator({
+          maxSize: 5120,
+        })
+        .build({
+          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.unitResultService.saveUnitResult({
+      ...saveResultDto,
+      resultImage: file,
+    });
   }
 
   @Get()

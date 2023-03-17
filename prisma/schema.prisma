@@ -67,7 +67,7 @@ model UnitResult {
   SDP Int?
   YPP Int?
   ZLP Int?
-  resultImage String?
+  resultImage String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   pollingUnit PollingUnit @relation(fields: [pollingunitId], references: [id])
