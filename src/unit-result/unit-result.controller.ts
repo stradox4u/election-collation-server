@@ -27,10 +27,11 @@ export class UnitResultController {
           fileType: /(jpg|jpeg|png)$/,
         })
         .addMaxSizeValidator({
-          maxSize: 5120,
+          maxSize: 5_000_000,
         })
         .build({
           errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          fileIsRequired: true,
         }),
     )
     file: Express.Multer.File,
