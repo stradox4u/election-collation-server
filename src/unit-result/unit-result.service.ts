@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AmazonS3Service } from 'src/aws-s3/aws-s3.service';
+import { EventsGateway } from 'src/events/events.gateway';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUnitResultDto } from './unit-result.types';
 
@@ -10,6 +11,7 @@ export class UnitResultService {
     private prisma: PrismaService,
     private s3Service: AmazonS3Service,
     private configService: ConfigService,
+    private eventGateway: EventsGateway,
   ) {}
 
   async saveUnitResult(data: CreateUnitResultDto) {
@@ -22,6 +24,7 @@ export class UnitResultService {
     const resultImagePath =
       this.configService.get<string>('RESULT_IMAGES_PATH_PREFIX') +
       fileUploaded;
+
     return this.prisma.unitResult.create({
       data: {
         A: +data.A,

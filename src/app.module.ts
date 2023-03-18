@@ -7,6 +7,7 @@ import { DayjsModule } from './dayjs/dayjs.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ElectionModule } from './election/election.module';
 import { AwsS3Module } from './aws-s3/aws-s3.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AwsS3Module } from './aws-s3/aws-s3.module';
     PrismaModule,
     ElectionModule,
     AwsS3Module,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
