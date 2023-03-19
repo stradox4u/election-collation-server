@@ -30,7 +30,7 @@ RUN npm run build
 
 FROM node:18-alpine3.17 AS production
 WORKDIR /app
-COPY --from=Buid /app/package*.json ./
+COPY --from=Build /app/package*.json ./
 RUN npm install --omit=dev
 COPY --from=Build /app/dist ./dist
 
