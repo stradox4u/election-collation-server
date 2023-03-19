@@ -18,11 +18,11 @@ COPY . ./
 
 # Build for production
 
-FROM node:18-alpine3.17 AS Build
+FROM node:18-alpine3.17 AS build
 WORKDIR /app
 COPY package*.json ./
 
-RUN npm install --silent
+RUN npm ci --silent
 COPY . .
 RUN npm run build
 
@@ -30,11 +30,11 @@ RUN npm run build
 
 FROM node:18-alpine3.17 AS production
 WORKDIR /app
-COPY --from=Build /app/package*.json ./
-RUN npm install --omit=dev
-COPY --from=Build /app/dist ./dist
+COPY --from=build /app/package*.json ./
+RUN npm ci --omit=dev
+COPY --from=build /app/dist ./dist
 
-RUN npx prisma migrate deploy --schema=prisma/schema.prisma
+RUN npx prisma migrate deploy
 RUN npm run seed:prod
 
 EXPOSE 80
