@@ -25,6 +25,8 @@ COPY package*.json ./
 RUN npm install --silent
 COPY . .
 RUN npm run build
+RUN npx prisma migrate deploy
+RUN npm run seed
 
 # Deploy built image
 
