@@ -1,11 +1,9 @@
 import {
   Body,
   Controller,
-  Get,
   HttpStatus,
   ParseFilePipeBuilder,
   Post,
-  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
