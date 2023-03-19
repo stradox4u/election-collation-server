@@ -1,3 +1,20 @@
+# Build for development
+FROM node:18 AS dev
+WORKDIR /app
+COPY package*.json ./
+
+RUN apt-get update
+RUN apt-get -y install \
+    cmake
+
+RUN npm ci --quiet
+COPY . .
+
+RUN npm run build
+
+RUN npx prisma generate
+COPY . ./
+
 # Build for production
 FROM node:18-alpine3.17 as build
 WORKDIR /app
@@ -17,19 +34,3 @@ EXPOSE 80
 
 CMD ["npm", "run", "start:prod"]
 
-# Build for development
-FROM node:18 AS dev
-WORKDIR /app
-COPY package*.json ./
-
-RUN apt-get update
-RUN apt-get -y install \
-    cmake
-
-RUN npm ci --quiet
-COPY . .
-
-RUN npm run build
-
-RUN npx prisma generate
-COPY . ./
