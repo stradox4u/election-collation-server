@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ElectionModule } from './election/election.module';
 import { AwsS3Module } from './aws-s3/aws-s3.module';
 import { EventsModule } from './events/events.module';
+import { PollingUnitModule } from './polling-unit/polling-unit.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { EventsModule } from './events/events.module';
     ElectionModule,
     AwsS3Module,
     EventsModule,
+    PollingUnitModule,
   ],
   controllers: [AppController],
   providers: [AppService],

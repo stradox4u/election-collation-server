@@ -41,9 +41,4 @@ export class UnitResultController {
       resultImage: file,
     });
   }
-
-  @Get()
-  async getPUs(@Query('key') key: string) {
-    return this.unitResultService.getPollingUnits(key);
-  }
 }

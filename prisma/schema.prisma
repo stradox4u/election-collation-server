@@ -10,6 +10,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model State {
+  id  Int @id @default(autoincrement())
+  state_id  Int @unique
+  name  String
+  lgas Lga[]
+  
+  @@index([state_id])
+}
+
+model Lga {
+  id Int @id  @default(autoincrement())
+  lga_id  Int
+  name  String
+  state State @relation(fields: [stateId], references: [state_id])
+  stateId Int
+  wards Ward[]
+  
+  @@index([lga_id])
+}
+
+model Ward {
+  id  Int @id @default(autoincrement())
+  ward_id Int
+  name  String
+  lga Lga @relation(fields: [lgaId], references: [id])
+  lgaId Int
+  
+  @@index([ward_id])
+}
+
 model PollingUnit {
   id  String  @default(uuid())  @id
   state String
