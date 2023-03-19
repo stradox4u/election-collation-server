@@ -16,7 +16,7 @@ RUN npx prisma generate
 COPY . ./
 
 # Build for production
-FROM node:18-alpine3.17 as build
+FROM node:18-alpine3.17 AS build
 WORKDIR /app
 COPY package*.json ./
 
@@ -24,7 +24,7 @@ RUN npm install --silent
 COPY . .
 RUN npm run build
 
-FROM node:18-alpine3.17 as prod
+FROM node:18-alpine3.17 AS prod
 WORKDIR /app
 COPY --from=buid /app/package*.json ./
 RUN npm install --omit=dev
