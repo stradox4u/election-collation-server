@@ -19,6 +19,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "npx prisma db push && ts-node src/seeder",
+    "seed:prod": "node dist/seeder",
     "seed:refresh": "DB_HOST=localhost ts-node src/seeder --refresh"
   },
   "dependencies": {

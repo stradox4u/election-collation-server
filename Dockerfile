@@ -25,7 +25,6 @@ COPY package*.json ./
 RUN npm install --silent
 COPY . .
 RUN npm run build
-RUN npx prisma generate
 
 # Deploy built image
 
@@ -34,6 +33,9 @@ WORKDIR /app
 COPY --from=Build /app/package*.json ./
 RUN npm install --omit=dev
 COPY --from=Build /app/dist ./dist
+
+RUN npx prisma migrate deploy --force-reset
+RUN npm run seed:prod
 
 EXPOSE 80
 
