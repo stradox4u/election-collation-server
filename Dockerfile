@@ -36,7 +36,7 @@ RUN npm ci --quiet
 
 COPY . .
 RUN npx prisma migrate deploy
-RUN npx prisma generate
+RUN npx run seed
 RUN npm run build
 
 # Deploy built image
