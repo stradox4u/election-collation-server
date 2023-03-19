@@ -33,8 +33,9 @@ WORKDIR /app
 COPY package*.json ./
 
 RUN npm ci --quiet
-RUN npx prisma generate
+
 COPY . .
+RUN npx prisma migrate deploy
 RUN npm run build
 
 # Deploy built image
