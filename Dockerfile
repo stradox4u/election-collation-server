@@ -24,7 +24,7 @@ RUN npm install --silent
 COPY . .
 RUN npm run build
 
-FROM node:18-alpine3.17 as production
+FROM node:18-alpine3.17 as prod
 WORKDIR /app
 COPY --from=buid /app/package*.json ./
 RUN npm install --omit=dev
