@@ -25,7 +25,7 @@ services:
       - prod
     build:
       context: .
-      target: base
+      target: dev
     env_file:
       - .env
     depends_on:

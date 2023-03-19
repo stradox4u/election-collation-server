@@ -1,5 +1,5 @@
 # stage 1 building the code
-FROM node:18 AS base
+FROM node:18 AS dev
 WORKDIR /app
 COPY package*.json ./
 
@@ -15,7 +15,7 @@ RUN npm run build
 RUN npx prisma generate
 COPY . ./
 
-FROM node:16-alpine as build
+FROM node:18-alpine3.17 as build
 WORKDIR /app
 COPY package*.json ./
 
@@ -23,7 +23,7 @@ RUN npm install --silent
 COPY . .
 RUN npm run build
 
-FROM node:16-alpine as production
+FROM node:18-alpine3.17 as production
 WORKDIR /app
 COPY --from=buid /app/package*.json ./
 RUN npm install --omit=dev
