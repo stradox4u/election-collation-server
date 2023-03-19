@@ -18,7 +18,7 @@ COPY . ./
 
 # Build for production
 
-FROM node:18-alpine3.17 AS build
+FROM node:18-alpine3.17 AS Build
 WORKDIR /app
 COPY package*.json ./
 
@@ -28,11 +28,11 @@ RUN npm run build
 
 # Deploy built image
 
-FROM node:18-alpine3.17
+FROM node:18-alpine3.17 AS production
 WORKDIR /app
-COPY --from=buid /app/package*.json ./
+COPY --from=Buid /app/package*.json ./
 RUN npm install --omit=dev
-COPY --from=build /app/dist ./dist
+COPY --from=Build /app/dist ./dist
 
 EXPOSE 80
 
