@@ -8,6 +8,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT');
+  app.enableCors({
+    origin: ['https://localhost:5173'],
+    methods: ['GET', 'PUT', 'PATCH', 'POST', 'DELETE'],
+    credentials: true,
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   const prismaService = app.get(PrismaService);
   await prismaService.enableShutdownHooks(app);
