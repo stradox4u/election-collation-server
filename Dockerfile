@@ -37,6 +37,7 @@ RUN npm ci --quiet
 COPY . .
 RUN npx prisma migrate deploy
 RUN npm run build
+RUN npx prisma generate
 
 # Deploy built image
 
@@ -45,8 +46,6 @@ WORKDIR /app
 COPY --from=build /app/package*.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
-
-RUN npx prisma generate
 
 EXPOSE 80
 
