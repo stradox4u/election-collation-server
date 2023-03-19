@@ -15,20 +15,20 @@ RUN npm run build
 RUN npx prisma generate
 COPY . ./
 
-# ENV NPM_CONFIG_PREFIX=/home/node/.npm-global
-# ENV PATH=$PATH:/home/node/.npm-global/bin
+FROM node:16-alpine as build
+WORKDIR /app
+COPY package*.json ./
 
-# RUN mkdir /app
-# RUN chown -R node:node /app
+RUN npm install --silent
+COPY . .
+RUN npm run build
 
-# USER node
+FROM node:16-alpine as production
+WORKDIR /app
+COPY --from=buid /app/package*.json ./
+RUN npm install --omit=dev
+COPY --from=build /app/dist ./dist
 
-# WORKDIR /app
-# COPY --chown=node:node package*.json ./
-# COPY --chown=node:node wait-for-it.sh ./
+EXPOSE 80
 
-
-# FROM base as production
-
-# RUN npm install
-# COPY . .
+CMD ["npm", "run", "start:prod"]
