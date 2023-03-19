@@ -33,6 +33,7 @@ WORKDIR /app
 COPY package*.json ./
 
 RUN npm ci --quiet
+RUN npx prisma generate
 COPY . .
 RUN npm run build
 
@@ -43,8 +44,6 @@ WORKDIR /app
 COPY --from=build /app/package*.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
-
-RUN npx prisma generate
 
 EXPOSE 80
 
