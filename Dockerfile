@@ -26,10 +26,10 @@ RUN npm run build
 
 # Deploy built image
 FROM build AS production
-# WORKDIR /app
-# COPY --from=buid /app/package*.json ./
-# RUN npm install --omit=dev
-# COPY --from=build /app/dist ./dist
+WORKDIR /app
+COPY --from=buid /app/package*.json ./
+RUN npm install --omit=dev
+COPY --from=build /app/dist ./dist
 
 EXPOSE 80
 
