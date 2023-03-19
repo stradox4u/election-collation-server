@@ -34,7 +34,7 @@ COPY --from=Build /app/package*.json ./
 RUN npm install --omit=dev
 COPY --from=Build /app/dist ./dist
 
-RUN npx prisma migrate deploy --schema=./prisma/schema.prisma
+RUN npx prisma migrate deploy --schema=prisma/schema.prisma
 RUN npm run seed:prod
 
 EXPOSE 80
