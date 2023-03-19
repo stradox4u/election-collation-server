@@ -28,7 +28,7 @@ RUN npm run build
 
 # Deploy built image
 
-FROM node:18-alpine3.17 AS production
+FROM node:18-alpine3.17
 WORKDIR /app
 COPY --from=buid /app/package*.json ./
 RUN npm install --omit=dev
