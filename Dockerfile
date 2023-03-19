@@ -1,5 +1,4 @@
-
-
+# Build for production
 FROM node:18-alpine3.17 as build
 WORKDIR /app
 COPY package*.json ./
@@ -18,7 +17,7 @@ EXPOSE 80
 
 CMD ["npm", "run", "start:prod"]
 
-# stage 1 building the code
+# Build for development
 FROM node:18 AS dev
 WORKDIR /app
 COPY package*.json ./
