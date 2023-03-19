@@ -1,4 +1,5 @@
 # Build for development
+
 FROM node:18 AS dev
 WORKDIR /app
 COPY package*.json ./
@@ -16,6 +17,7 @@ RUN npx prisma generate
 COPY . ./
 
 # Build for production
+
 FROM node:18-alpine3.17 AS build
 WORKDIR /app
 COPY package*.json ./
@@ -25,7 +27,8 @@ COPY . .
 RUN npm run build
 
 # Deploy built image
-FROM build AS production
+
+FROM node:18-alpine3.17 AS production
 WORKDIR /app
 COPY --from=buid /app/package*.json ./
 RUN npm install --omit=dev
