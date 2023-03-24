@@ -9,10 +9,11 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT');
   app.enableCors({
-    origin: ['https://localhost:5173'],
+    origin: ['http://localhost:5173'],
     methods: ['GET', 'PUT', 'PATCH', 'POST', 'DELETE'],
     credentials: true,
   });
+  app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   const prismaService = app.get(PrismaService);
   await prismaService.enableShutdownHooks(app);

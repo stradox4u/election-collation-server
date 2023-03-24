@@ -16,16 +16,6 @@ RUN npm run build
 RUN npx prisma generate
 COPY . ./
 
-# Migrate database
-FROM node:18-alpine3.17 AS migrate
-WORKDIR /app
-COPY package*.json ./
-
-RUN npm ci --quiet
-COPY . .
-
-RUN npm run seed
-
 # Build for production
 
 FROM node:18-alpine3.17 AS build

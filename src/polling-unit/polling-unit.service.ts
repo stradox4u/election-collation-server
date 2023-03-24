@@ -6,6 +6,9 @@ export class PollingUnitService {
   constructor(private readonly prisma: PrismaService) {}
 
   async fetchPollingUnits(key: string) {
+    if (!key) {
+      return this.prisma.state.findMany();
+    }
     const keyArray = key.split('-');
     if (keyArray.length === 0) {
       throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
@@ -35,13 +38,20 @@ export class PollingUnitService {
       case 3:
         return this.prisma.pollingUnit.findMany({
           where: {
-            state: `${stateId}`,
-            lga: `${lgaId}`,
-            ward: `${wardId}`,
+            state: `${this.addZeroInFront(+stateId)}`,
+            lga: `${this.addZeroInFront(+lgaId)}`,
+            ward: `${this.addZeroInFront(+wardId)}`,
           },
         });
       default:
         throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
     }
+  }
+
+  private addZeroInFront(number: number) {
+    return number.toLocaleString('en-US', {
+      minimumIntegerDigits: 2,
+      useGrouping: false,
+    });
   }
 }
