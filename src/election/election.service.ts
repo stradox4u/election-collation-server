@@ -28,6 +28,7 @@ export class ElectionService {
       relatedPus.push(...pollingUnits);
     }
 
+    // Create election
     const newElection = await this.prisma.election.create({
       data: {
         electionType,
@@ -35,12 +36,23 @@ export class ElectionService {
       },
     });
 
+    // Attach polling units
     const elPuObjects = relatedPus.map((el) => {
       return { pollingunitId: el.id, electionId: newElection.id };
     });
 
     await this.prisma.electionPollingUnit.createMany({
       data: elPuObjects,
+    });
+
+    // Attach parties
+    const allParties = await this.prisma.politicalParty.findMany();
+    const electionPoliticalParties = allParties.map((party) => {
+      return { electionId: newElection.id, politicalPartyId: party.id };
+    });
+
+    await this.prisma.electionPoliticalParty.createMany({
+      data: electionPoliticalParties,
     });
 
     const updatedElection = await this.prisma.election.findFirst({
@@ -50,15 +62,12 @@ export class ElectionService {
       select: {
         electionType: true,
         electionDate: true,
-        pollingUnits: {
+        politicalParties: {
           select: {
-            pollingUnit: {
+            politicalParty: {
               select: {
-                state: true,
-                lga: true,
-                ward: true,
-                puNumber: true,
-                puName: true,
+                name: true,
+                id: true,
               },
             },
           },

@@ -22,6 +22,9 @@
     "seed:prod": "node dist/seeder",
     "seed:refresh": "DB_HOST=localhost ts-node src/seeder --refresh"
   },
+  "prisma": {
+    "seed": "ts-node src/seeder.ts"
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.294.0",
     "@nestjs/common": "^9.0.0",

@@ -6,7 +6,7 @@ import * as path from 'path';
 import { PollingUnit } from './pollingUnit.types';
 
 @Injectable()
-export class ElectionSeeder implements Seeder {
+export class PollingUnitSeeder implements Seeder {
   constructor(private prisma: PrismaService) {}
 
   async seed(): Promise<void> {

@@ -9,6 +9,7 @@ import { ElectionModule } from './election/election.module';
 import { AwsS3Module } from './aws-s3/aws-s3.module';
 import { EventsModule } from './events/events.module';
 import { PollingUnitModule } from './polling-unit/polling-unit.module';
+import { PartyModule } from './party/party.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { PollingUnitModule } from './polling-unit/polling-unit.module';
     AwsS3Module,
     EventsModule,
     PollingUnitModule,
+    PartyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

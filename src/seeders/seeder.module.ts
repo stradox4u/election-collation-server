@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { DayjsModule } from 'src/dayjs/dayjs.module';
-import { ElectionSeeder } from './election.seeder';
+import { PollingUnitSeeder } from './pollingunit.seeder';
 
 @Module({
   imports: [DayjsModule],
   controllers: [],
-  providers: [ElectionSeeder],
+  providers: [PollingUnitSeeder],
 })
 export class SeederModule {}
