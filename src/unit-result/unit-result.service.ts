@@ -25,26 +25,8 @@ export class UnitResultService {
       this.configService.get<string>('RESULT_IMAGES_PATH_PREFIX') +
       fileUploaded;
 
-    return this.prisma.unitResult.create({
+    const unitResult = await this.prisma.unitResult.create({
       data: {
-        // A: +data.A,
-        // AA: +data.AA,
-        // AAC: +data.AAC,
-        // ADC: +data.ADC,
-        // ADP: +data.ADP,
-        // APC: +data.APC,
-        // APGA: +data.APGA,
-        // APM: +data.APM,
-        // APP: +data.APP,
-        // BP: +data.BP,
-        // LP: +data.LP,
-        // NNPP: +data.NNPP,
-        // NRM: +data.NRM,
-        // PDP: +data.PDP,
-        // PRP: +data.PRP,
-        // SDP: +data.SDP,
-        // YPP: +data.YPP,
-        // ZLP: +data.ZLP,
         resultImage: resultImagePath,
         pollingUnit: {
           connect: {
@@ -58,19 +40,19 @@ export class UnitResultService {
         },
       },
     });
-  }
 
-  async getPollingUnits(key: string) {
-    const [state, lga, ward] = key.split('-');
-
-    const pus = await this.prisma.pollingUnit.findMany({
-      where: {
-        state,
-        lga,
-        ward,
-      },
+    const partyResultsMapped = data.partyResults.map((partyResult) => {
+      return {
+        unitResultId: unitResult.id,
+        politicalPartyId: partyResult.partyId,
+        voteCount: partyResult.votes,
+      };
     });
 
-    return pus;
+    await this.prisma.politicalPartyUnitResult.createMany({
+      data: partyResultsMapped,
+    });
+    // Calculate totals and broadcast to client using websockets
+    return;
   }
 }

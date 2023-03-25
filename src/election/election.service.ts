@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateElectionDto, PusQueryObject } from './election.types';
+import {
+  CreateElectionDto,
+  GetElectionReturn,
+  PusQueryObject,
+} from './election.types';
 
 @Injectable()
 export class ElectionService {
@@ -75,5 +79,30 @@ export class ElectionService {
       },
     });
     return updatedElection;
+  }
+
+  async getAllElections(elType): Promise<GetElectionReturn[]> {
+    const query: { electionType?: string } = {};
+    if (elType) {
+      query.electionType = elType;
+    }
+    return await this.prisma.election.findMany({
+      where: query,
+      select: {
+        electionDate: true,
+        electionType: true,
+        id: true,
+        politicalParties: {
+          select: {
+            politicalParty: {
+              select: {
+                name: true,
+                id: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 }
