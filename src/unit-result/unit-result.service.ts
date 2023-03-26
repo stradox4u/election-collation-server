@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AmazonS3Service } from 'src/aws-s3/aws-s3.service';
+import { ElectionService } from 'src/election/election.service';
 import { EventsGateway } from 'src/events/events.gateway';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUnitResultDto } from './unit-result.types';
@@ -12,6 +13,7 @@ export class UnitResultService {
     private s3Service: AmazonS3Service,
     private configService: ConfigService,
     private eventGateway: EventsGateway,
+    private electionService: ElectionService,
   ) {}
 
   async saveUnitResult(data: CreateUnitResultDto) {
@@ -42,10 +44,11 @@ export class UnitResultService {
     });
 
     const partyResultsMapped = data.partyResults.map((partyResult) => {
+      const result = JSON.parse(partyResult);
       return {
         unitResultId: unitResult.id,
-        politicalPartyId: partyResult.partyId,
-        voteCount: partyResult.votes,
+        politicalPartyId: result.partyId,
+        voteCount: result.votes,
       };
     });
 
@@ -53,6 +56,12 @@ export class UnitResultService {
       data: partyResultsMapped,
     });
     // Calculate totals and broadcast to client using websockets
+    await this.broadcastNewTotals(data.electionId);
     return;
+  }
+
+  private async broadcastNewTotals(elId: string) {
+    const newTotals = await this.electionService.getElectionResults(elId);
+    this.eventGateway.server.sockets.emit('voteCountsUpdated', newTotals);
   }
 }

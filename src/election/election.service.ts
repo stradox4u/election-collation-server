@@ -4,6 +4,7 @@ import {
   CreateElectionDto,
   GetElectionReturn,
   PusQueryObject,
+  SummedVotes,
 } from './election.types';
 
 @Injectable()
@@ -81,7 +82,7 @@ export class ElectionService {
     return updatedElection;
   }
 
-  async getAllElections(elType): Promise<GetElectionReturn[]> {
+  async getAllElections(elType: string): Promise<GetElectionReturn[]> {
     const query: { electionType?: string } = {};
     if (elType) {
       query.electionType = elType;
@@ -104,5 +105,44 @@ export class ElectionService {
         },
       },
     });
+  }
+
+  async getElectionResults(elId: string) {
+    const election = await this.prisma.election.findFirst({
+      where: {
+        id: elId,
+      },
+      select: {
+        politicalParties: {
+          select: {
+            politicalParty: {
+              select: {
+                id: true,
+                name: true,
+                unitResults: {
+                  select: {
+                    voteCount: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const summedVotes = election.politicalParties.map((party) => {
+      return {
+        name: party.politicalParty.name,
+        id: party.politicalParty.id,
+        totalVotes: party.politicalParty.unitResults.reduce(
+          (prevVal, currVal) => {
+            return { voteCount: prevVal.voteCount + currVal.voteCount };
+          },
+        ).voteCount,
+      };
+    });
+
+    return summedVotes;
   }
 }

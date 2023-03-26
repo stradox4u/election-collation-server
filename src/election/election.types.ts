@@ -24,3 +24,9 @@ export interface GetElectionReturn {
   id: string;
   politicalParties: PolPartiesUnit[];
 }
+
+export interface SummedVotes {
+  name: string;
+  id: number;
+  totalVotes: number;
+}
