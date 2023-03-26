@@ -45,9 +45,14 @@ export class ElectionService {
       return { pollingunitId: el.id, electionId: newElection.id };
     });
 
-    await this.prisma.electionPollingUnit.createMany({
-      data: elPuObjects,
-    });
+    for (const pu of elPuObjects) {
+      await this.prisma.electionPollingUnit.create({
+        data: pu,
+      });
+    }
+    // await this.prisma.electionPollingUnit.createMany({
+    //   data: elPuObjects,
+    // });
 
     // Attach parties
     const allParties = await this.prisma.politicalParty.findMany();
