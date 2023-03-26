@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   SubscribeMessage,
   MessageBody,
@@ -11,7 +12,7 @@ import { Server } from 'socket.io';
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: 'http://localhost:5173',
+    origin: new ConfigService().get<string>('APP_FRONTEND_URL'),
   },
 })
 export class EventsGateway {
