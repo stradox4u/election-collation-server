@@ -4,7 +4,7 @@ export interface PartyUnitResult {
 }
 
 export interface CreateUnitResultDto {
-  partyResults: PartyUnitResult[];
+  partyResults: string[];
   resultImage?: Express.Multer.File;
   pollingunitId: string;
   electionId: string;

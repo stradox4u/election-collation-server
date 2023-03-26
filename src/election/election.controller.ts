@@ -25,4 +25,9 @@ export class ElectionController {
   async getElections(@Query('type') type: string) {
     return this.electionService.getAllElections(type);
   }
+
+  @Get('/results')
+  async getElectionResults(@Query('elId') elId: string) {
+    return await this.electionService.getElectionResults(elId);
+  }
 }

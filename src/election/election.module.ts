@@ -7,5 +7,6 @@ import { ElectionService } from './election.service';
   imports: [PrismaModule],
   providers: [ElectionService],
   controllers: [ElectionController],
+  exports: [ElectionService],
 })
 export class ElectionModule {}
