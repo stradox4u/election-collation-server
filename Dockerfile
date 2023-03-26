@@ -37,7 +37,7 @@ RUN npm run build
 FROM node:18-alpine3.17 AS production
 WORKDIR /app
 COPY --from=build /app/package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --quiet
 RUN npm run build
 
 EXPOSE 80
