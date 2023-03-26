@@ -45,10 +45,11 @@ export class ElectionService {
       return { pollingunitId: el.id, electionId: newElection.id };
     });
 
-    console.log(elPuObjects.length);
-    for (const pu of elPuObjects) {
-      await this.prisma.electionPollingUnit.create({
-        data: pu,
+    const chunks = this.splitIntoChunks(elPuObjects, 10);
+
+    for (const chunk of chunks) {
+      await this.prisma.electionPollingUnit.createMany({
+        data: chunk,
       });
     }
     // await this.prisma.electionPollingUnit.createMany({
@@ -150,5 +151,17 @@ export class ElectionService {
     });
 
     return summedVotes;
+  }
+
+  private splitIntoChunks(
+    array: { pollingunitId: string; electionId: string }[],
+    parts: number,
+  ) {
+    const copiedArray = array.slice();
+    const result = [];
+    for (let i = parts; i > 0; i--) {
+      result.push(copiedArray.splice(0, Math.ceil(copiedArray.length / i)));
+    }
+    return result;
   }
 }
