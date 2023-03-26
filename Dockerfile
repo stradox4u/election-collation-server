@@ -16,9 +16,9 @@ RUN npm run build
 RUN npx prisma generate
 COPY . ./
 
-# Build for production
+# Migrate database
 
-FROM node:18-alpine3.17 AS build
+FROM node:18-alpine3.17 AS migrate
 WORKDIR /app
 COPY package*.json ./
 
@@ -36,8 +36,10 @@ RUN npm run build
 
 FROM node:18-alpine3.17 AS production
 WORKDIR /app
-COPY --from=build /app/package*.json ./
+COPY package*.json ./
 RUN npm ci --quiet
+
+COPY . .
 RUN npm run build
 
 EXPOSE 80
