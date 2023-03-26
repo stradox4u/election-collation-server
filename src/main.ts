@@ -9,7 +9,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT');
   app.enableCors({
-    origin: ['http://localhost:5173'],
+    origin: [configService.get<string>('APP_FRONTEND_URL')],
     methods: ['GET', 'PUT', 'PATCH', 'POST', 'DELETE'],
     credentials: true,
   });

@@ -26,8 +26,10 @@ RUN npm ci --quiet
 
 COPY . .
 RUN npx prisma migrate deploy
-RUN npx prisma generate
-RUN npx prisma db seed
+
+# Next 2 lines are needed only on initial deployment to seed db
+# RUN npx prisma generate
+# RUN npx prisma db seed
 RUN npm run build
 
 # Deploy built image
@@ -36,8 +38,7 @@ FROM node:18-alpine3.17 AS production
 WORKDIR /app
 COPY --from=build /app/package*.json ./
 RUN npm ci --omit=dev
-COPY --from=build /app/dist ./dist
-RUN npx prisma generate
+COPY . .
 
 EXPOSE 80
 
