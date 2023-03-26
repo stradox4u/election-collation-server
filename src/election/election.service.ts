@@ -45,6 +45,7 @@ export class ElectionService {
       return { pollingunitId: el.id, electionId: newElection.id };
     });
 
+    console.log(elPuObjects.length);
     for (const pu of elPuObjects) {
       await this.prisma.electionPollingUnit.create({
         data: pu,
