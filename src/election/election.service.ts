@@ -4,7 +4,6 @@ import {
   CreateElectionDto,
   GetElectionReturn,
   PusQueryObject,
-  SummedVotes,
 } from './election.types';
 
 @Injectable()
@@ -40,7 +39,7 @@ export class ElectionService {
         electionDate: new Date(electionDate),
       },
     });
-
+    console.log({ newElection });
     // Attach polling units
     const elPuObjects = relatedPus.map((el) => {
       return { pollingunitId: el.id, electionId: newElection.id };
@@ -55,6 +54,7 @@ export class ElectionService {
     const electionPoliticalParties = allParties.map((party) => {
       return { electionId: newElection.id, politicalPartyId: party.id };
     });
+    console.log({ allParties });
 
     await this.prisma.electionPoliticalParty.createMany({
       data: electionPoliticalParties,
