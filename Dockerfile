@@ -34,14 +34,14 @@ RUN npm run build
 
 # Deploy built image
 
-FROM node:18-alpine3.17 AS production
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --quiet
+FROM migrate AS production
+# WORKDIR /app
+# COPY package*.json ./
+# RUN npm ci --quiet
 
-COPY . .
-RUN npx prisma generate
-RUN npm run build
+# COPY . .
+# RUN npx prisma generate
+# RUN npm run build
 
 EXPOSE 80
 
