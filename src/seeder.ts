@@ -4,7 +4,13 @@ import { PrismaModule } from './prisma/prisma.module';
 import { PartySeeder } from './seeders/party.seeder';
 import { PollingUnitSeeder } from './seeders/pollingunit.seeder';
 import { WardSeeder } from './seeders/wards.seeder';
+import { PresidentialElectionSeeder } from './seeders/presidential-election.seeder';
 
 seeder({
   imports: [DayjsModule, PrismaModule],
-}).run([PollingUnitSeeder, WardSeeder, PartySeeder]);
+}).run([
+  PollingUnitSeeder,
+  WardSeeder,
+  PartySeeder,
+  PresidentialElectionSeeder,
+]);

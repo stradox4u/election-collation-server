@@ -10,6 +10,12 @@ export class PollingUnitSeeder implements Seeder {
   constructor(private prisma: PrismaService) {}
 
   async seed(): Promise<void> {
+    // Check if polling units have been seeded, return if so
+    const existingPus = await this.prisma.pollingUnit.findMany();
+    if (existingPus.length > 0) {
+      return;
+    }
+
     const data = await readFile(
       path.join(__dirname, '../../cleanedPUs.json'),
       'utf-8',

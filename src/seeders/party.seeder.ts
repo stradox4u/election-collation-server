@@ -7,6 +7,12 @@ export class PartySeeder implements Seeder {
   constructor(private prisma: PrismaService) {}
 
   async seed(): Promise<void> {
+    // Check if parties have been seeded, return if so
+    const existingParties = await this.prisma.politicalParty.findMany();
+    if (existingParties.length > 0) {
+      return;
+    }
+
     await this.prisma.politicalParty.createMany({
       data: [
         { name: 'A' },
