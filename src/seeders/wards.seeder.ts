@@ -9,6 +9,12 @@ export class WardSeeder implements Seeder {
   constructor(private prisma: PrismaService) {}
 
   async seed(): Promise<void> {
+    // Check if wards have been seeded, return if so
+    const existingWards = await this.prisma.ward.findMany();
+    if (existingWards.length > 0) {
+      return;
+    }
+
     const stateData = await readFile(
       path.join(__dirname, '../../statesAndLgas.json'),
       'utf-8',

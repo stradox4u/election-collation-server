@@ -28,8 +28,8 @@ COPY . .
 RUN npx prisma migrate deploy
 
 # Next 2 lines are needed only on initial deployment to seed db
-# RUN npx prisma generate
-# RUN npx prisma db seed
+RUN npx prisma generate
+RUN npx prisma db seed
 RUN npm run build
 
 # Deploy built image
