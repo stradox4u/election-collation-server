@@ -21,8 +21,7 @@ COPY . ./
 FROM node:18-alpine3.17 AS migrate
 WORKDIR /app
 COPY package*.json ./
-
-ENV DATABASE_URL ${DATABASE_URL}
+COPY .env ./
 
 RUN npm ci --quiet
 
