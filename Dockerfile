@@ -21,7 +21,8 @@ COPY . ./
 FROM node:18-alpine3.17 AS migrate
 WORKDIR /app
 COPY package*.json ./
-COPY .env ./
+
+ENV DATABASE_URL ${RAILWAY_ENVIRONMENT_DATABASE_URL}
 
 RUN npm ci --quiet
 
