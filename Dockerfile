@@ -19,7 +19,7 @@ COPY . ./
 # Migrate database
 
 FROM node:18-alpine3.17 AS migrate
-ARG RAILWAY_ENVIRONMENT
+ARG DATABASE_URL
 WORKDIR /app
 COPY package*.json ./
 
@@ -36,7 +36,7 @@ RUN npm run build
 # Deploy built image
 
 FROM migrate AS production
-ARG RAILWAY_ENVIRONMENT
+ARG DATABASE_URL
 # WORKDIR /app
 # COPY package*.json ./
 # RUN npm ci --quiet
