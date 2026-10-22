@@ -13,7 +13,7 @@ Stack:
 
 ## Prerequisites
 
-- Node.js 18. Both Dockerfile stages use Node 18 (`node:18` and `node:18-alpine3.17`). Node 20 also works for local development.
+- Node.js 24 LTS, 24.22.1 or later. Earlier releases have the Brotli decoder vulnerability CVE-2026-111497. `.nvmrc` pins it for `nvm use`, and docker-compose's image (`node:24.22.1-trixie`) uses it too. Node 20 is end-of-life and gets no fix for that vulnerability, so don't use it, even locally.
 - npm. Install with `npm ci` so you get the versions in `package-lock.json`.
 - A PostgreSQL database. These instructions were checked with PostgreSQL 15 and 16. docker-compose uses the untagged `postgres` image.
 - Docker with Compose v2, if you want to use `docker-compose.yml`.
@@ -27,7 +27,7 @@ All configuration comes from environment variables. Locally, copy the example fi
 cp .env.example .env
 ```
 
-Create `.env` before you run `npm ci` or `npx prisma generate`. The generated Prisma client only loads `.env` by itself if the file existed when the client was generated. Without that, scripts that use the client outside Nest, such as `npm run seed:prod` (`node dist/seeder`), fail with `Environment variable not found: DATABASE_URL`. If that happens, run `npx prisma generate` again. The app itself loads `.env` through `@nestjs/config`, and the Prisma CLI loads it on its own.
+Create `.env` before you run `npm ci` or `npx prisma generate`. The generated Prisma client only loads `.env` by itself if the file existed when the client was generated. If a script fails with `Environment variable not found: DATABASE_URL`, run `npx prisma generate` again. The app itself loads `.env` through `@nestjs/config`, and the Prisma CLI loads it on its own.
 
 | Variable | Read by | Purpose |
 | --- | --- | --- |
@@ -99,9 +99,8 @@ Other ways to start it:
 | `npm start` | `nest start` |
 | `npm run start:dev` | `nest start --watch` |
 | `npm run start:debug` | `nest start --debug --watch` |
-| `npm run start:prod` | `node dist/main` (run `npm run build` first) |
 
-If you change `prisma/schema.prisma`, create a migration with `npx prisma migrate dev --name <change>` instead of using `prisma db push`. Production only applies migrations.
+If you change `prisma/schema.prisma`, create a migration with `npx prisma migrate dev --name <change>` instead of using `prisma db push`, so the change is recorded in `prisma/migrations`.
 
 ## Running with docker-compose
 
@@ -113,7 +112,7 @@ If you change `prisma/schema.prisma`, create a migration with `npx prisma migrat
 | `collation_server` | `dev`, `prod` | Dockerfile `dev` stage, then `npx prisma generate && npm run start:dev` | 8000 |
 | `db_seeder` | `seed` | Does not work, see [Known issues](#known-issues) | 8000 |
 
-The `dev` and `prod` profiles start the same two services. Both run the server in watch mode from the `dev` stage. Compose never uses the Dockerfile's `production` stage, which is what Railway builds.
+The `dev` and `prod` profiles start the same two services. Both run the server in watch mode from the Dockerfile's `dev` stage.
 
 `collation_server` bind-mounts the repository at `/app` and your host `node_modules` at `/app/node_modules`, so the container uses the host's installed packages. Run `npm ci` on the host first. Without a populated `node_modules`, there is no local Prisma CLI: `npx prisma generate` downloads the latest Prisma instead, fails, and the container restarts in a loop.
 
@@ -158,8 +157,6 @@ Which command to use:
 | Command | What it does | Use it for |
 | --- | --- | --- |
 | `npx prisma db seed` | Runs `ts-node src/seeder.ts` (the `prisma.seed` entry in `package.json`) | Local development, after `npx prisma migrate deploy` |
-| `npm run seed:prod` | `node dist/seeder` | Built code. Needs `npm run build` first. |
-| `npm run migrate:deploy` | `prisma migrate deploy && npm run seed:prod` | The Railway pre-deploy command. Also works locally after `npm run build`. |
 | `npm run seed` | `npx prisma db push && ts-node src/seeder` | Avoid on a new database. `db push` creates the tables without migration history, and a later `prisma migrate deploy` fails with error `P3005` ("The database schema is not empty"). On a database that is already migrated, the push is a no-op. |
 | `npm run seed:refresh` | `ts-node src/seeder --refresh` | Same as seeding normally. `--refresh` calls each seeder's `drop()`, but they are all empty, so nothing is cleared. |
 
@@ -200,64 +197,6 @@ Routes, from the controllers in `src/`:
 
 Socket.IO is served on the same port at the default path `/socket.io/`, outside the `api/v1` prefix. Its CORS origin is also `APP_FRONTEND_URL`. After each successful `POST /api/v1/results`, the server emits `voteCountsUpdated` to all clients. The payload is the same per-party totals that `/election/results` returns, for the election the result belongs to. A client `events` message is echoed back.
 
-## Deployment on Railway
-
-The service deploys from the Dockerfile, as configured in `railway.json`:
-
-```json
-{
-  "build": { "builder": "DOCKERFILE" },
-  "deploy": { "preDeployCommand": ["npm run migrate:deploy"] }
-}
-```
-
-How a deploy runs:
-
-1. **Build.** Railway builds the Dockerfile's final `production` stage (`node:18-alpine3.17`), which runs `npm ci`, `npx prisma generate` and `npm run build`. The build doesn't touch the database and needs no `DATABASE_URL`. `.dockerignore` keeps `node_modules`, `.env` and `dist` out of the build context.
-2. **Pre-deploy.** Railway runs `npm run migrate:deploy` in a container from the built image, with the service's variables and access to the private network. That runs `prisma migrate deploy`, then the seeder (`node dist/seeder`). On a database that is already populated this takes a few seconds: `No pending migrations to apply.`, and every seeder skips. If this step fails, the new deployment does not start.
-3. **Start.** The container runs `CMD ["/sbin/tini", "--", "node", "dist/main"]`. `tini` is PID 1 and passes SIGTERM on to node when Railway stops the container. `app.enableShutdownHooks()` then closes the Socket.IO and HTTP servers, Prisma disconnects in `onApplicationShutdown`, and node exits on the signal (exit code 143). If the Railway service has a custom start command (for example `npm run start:prod`), remove it so the Dockerfile `CMD` applies. With npm as PID 1, npm receives the SIGTERM but doesn't pass it on to node, so the container is killed (exit code 137).
-
-Service variables:
-
-- `DATABASE_URL=${{Postgres.DATABASE_URL}}`. Replace `Postgres` with the name of your database service. This reference resolves to the private `*.railway.internal` URL, which the pre-deploy step and the app can both reach. Don't use the public URL (`DATABASE_PUBLIC_URL`): traffic through the public proxy incurs egress fees.
-- `APP_FRONTEND_URL`, the `AWS_*` variables, `RESULT_IMAGES_FOLDER` and `RESULT_IMAGES_PATH_PREFIX`, as described in [Configuration](#configuration).
-- `PORT` is optional. The app listens on `PORT` if it is set and on 80 (the port the Dockerfile `EXPOSE`s) otherwise. Make sure Railway routes traffic to the same port.
-- `DB_HOST`, `DB_USER`, `DB_PASSWORD` and `DB_NAME` are not needed.
-
-### Trying the production image locally
-
-This mirrors the Railway flow against a local database on a Docker network:
-
-```bash
-docker network create collation-net
-docker run -d --name collation-pg --network collation-net \
-  -e POSTGRES_USER=collation -e POSTGRES_PASSWORD=collation -e POSTGRES_DB=collation postgres:16-alpine
-
-docker build -t collation-server .     # no database needed
-
-# the pre-deploy step
-docker run --rm --network collation-net \
-  -e DATABASE_URL="postgresql://collation:collation@collation-pg:5432/collation?schema=public" \
-  collation-server npm run migrate:deploy
-
-# the app, on its default port 80
-docker run -d --name collation-app --network collation-net -p 8090:80 \
-  -e DATABASE_URL="postgresql://collation:collation@collation-pg:5432/collation?schema=public" \
-  -e APP_FRONTEND_URL=http://localhost:5173 \
-  collation-server
-
-curl http://localhost:8090/api/v1/election
-docker stop collation-app    # exits at once with code 143 (SIGTERM, after the shutdown hooks run)
-```
-
-Remove everything afterwards (`-v` also deletes the Postgres container's data volume):
-
-```bash
-docker rm -f -v collation-app collation-pg
-docker network rm collation-net
-docker rmi collation-server
-```
-
 ## After pulling a Prisma upgrade
 
 Run:
@@ -267,11 +206,11 @@ npm ci
 npx prisma generate
 ```
 
-If the client in `node_modules/.prisma/client` was not regenerated for the installed `@prisma/client`, the app fails on startup with `@prisma/client did not initialize yet. Please run "prisma generate" and try to import it again.` Run `npx prisma generate` after any change to `prisma/schema.prisma` too. The Docker image runs `prisma generate` during its build, and the compose server runs it on every start.
+If the client in `node_modules/.prisma/client` was not regenerated for the installed `@prisma/client`, the app fails on startup with `@prisma/client did not initialize yet. Please run "prisma generate" and try to import it again.` Run `npx prisma generate` after any change to `prisma/schema.prisma` too. The compose server runs it on every start.
 
 ## Known issues
 
-- **The compose `seed` profile does not work.** `docker compose --profile seed up` fails with `service "db_seeder" depends on undefined service "collation_db"`, because `collation_db` is not in that profile. Even with `--profile dev` added, the build fails with `target stage "base" could not be found`, because the Dockerfile has only `dev` and `production` stages. The service's `command` is also commented out. Seed with `docker compose exec collation_server npx prisma db seed` instead, as shown above.
+- **The compose `seed` profile does not work.** `docker compose --profile seed up` fails with `service "db_seeder" depends on undefined service "collation_db"`, because `collation_db` is not in that profile. Even with `--profile dev` added, the build fails with `target stage "base" could not be found`, because the Dockerfile has no `base` stage. The service's `command` is also commented out. Seed with `docker compose exec collation_server npx prisma db seed` instead, as shown above.
 - **`POST /api/v1/results` reports bad input as 500, and some failures leave an orphaned image.** The 500s come in two kinds:
   - An unknown `partyId`, `pollingunitId` or `electionId` fails at the database write, and the app doesn't turn that error into a 4xx. The write is one transaction, so nothing is saved. The result-sheet image, however, has already been uploaded to S3 and stays there with nothing pointing to it.
   - Malformed JSON in `partyResults`, or a lone `partyResults` field without `[]`, also returns 500. These fail before the upload, so nothing is left behind.
