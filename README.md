@@ -193,10 +193,10 @@ Routes, from the controllers in `src/`:
 | GET | `/api/v1` | Returns `Hello World!`. Useful as a smoke check. |
 | GET | `/api/v1/election?type=<electionType>` | Lists elections with their parties. `type` (e.g. `Presidential`) is optional. |
 | POST | `/api/v1/election` | Creates an election from `electionType`, `electionDate` and `electionArea`. `electionArea` is a list of `state-lga-ward` codes in the zero-padded form stored on polling units (e.g. `01-10-01`); leave off trailing parts to cover a whole state or LGA. The new election is linked to the matching polling units and all parties. |
-| GET | `/api/v1/election/results?elId=<electionId>` | Total votes per party. See [Known issues](#known-issues). |
+| GET | `/api/v1/election/results?elId=<electionId>` | Total votes per party in that election, counting only its own results. Parties with no results yet show `0`. Returns 400 if `elId` is missing and 404 if no election has that id. |
 | GET | `/api/v1/parties/:electionId` | Parties attached to an election. |
 | GET | `/api/v1/pollingunits?key=<key>` | With no `key`, all states. `key=<state>` returns a state with its LGAs, `<state>-<lga>` an LGA with its wards, and `<state>-<lga>-<ward>` that ward's polling units. Keys are numeric ids, e.g. `1-10-1`. |
-| POST | `/api/v1/results` | Submits a polling-unit result as `multipart/form-data`: `resultImage` (jpg, jpeg or png, up to 5 MB), `pollingunitId`, `electionId`, and `partyResults`, repeated once per party, each a JSON string such as `{"partyId":1,"votes":120}`. Uploads the image to S3, saves the result, then broadcasts new totals. |
+| POST | `/api/v1/results` | Submits a polling-unit result as `multipart/form-data`: `resultImage` (jpg, jpeg or png, up to 5 MB), `pollingunitId`, `electionId`, and `partyResults`, repeated once per party, each a JSON string such as `{"partyId":1,"votes":120}`. Uploads the image to S3, saves the result together with its party votes in one transaction, then broadcasts new totals. If the save fails, neither the result nor any of its votes is stored. |
 
 Socket.IO is served on the same port at the default path `/socket.io/`, outside the `api/v1` prefix. Its CORS origin is also `APP_FRONTEND_URL`. After each successful `POST /api/v1/results`, the server emits `voteCountsUpdated` to all clients with the same per-party totals that `/election/results` returns. A client `events` message is echoed back.
 
@@ -272,7 +272,7 @@ If the client in `node_modules/.prisma/client` was not regenerated for the insta
 ## Known issues
 
 - **The compose `seed` profile does not work.** `docker compose --profile seed up` fails with `service "db_seeder" depends on undefined service "collation_db"`, because `collation_db` is not in that profile. Even with `--profile dev` added, the build fails with `target stage "base" could not be found`, because the Dockerfile has only `dev` and `production` stages. The service's `command` is also commented out. Seed with `docker compose exec collation_server npx prisma db seed` instead, as shown above.
-- **`GET /api/v1/election/results` returns 500 until every party in the election has a result.** It reduces each party's results without an initial value, which throws `Reduce of empty array with no initial value` when a party has none. `POST /api/v1/results` computes the same totals to broadcast them, so in that state it also returns 500, after the result has already been saved. The totals also add up a party's results across all elections, not only the one in `elId`.
+- **`POST /api/v1/results` returns 500 for an unknown `partyId`.** The foreign-key error isn't turned into a client error. Nothing is saved to the database, but the result-sheet image has already been uploaded to S3, so it stays there with nothing pointing to it.
 
 ## Project layout
 
