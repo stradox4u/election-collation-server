@@ -16,36 +16,22 @@ RUN npm run build
 RUN npx prisma generate
 COPY . ./
 
-# Migrate database
+# Build for production
+# Migrations and seeding run in Railway's pre-deploy command (see railway.json),
+# where the database is reachable over the private network.
 
-FROM node:18-alpine3.17 AS migrate
-ARG DATABASE_URL
+FROM node:18-alpine3.17 AS production
 WORKDIR /app
 COPY package*.json ./
 
 RUN npm ci --quiet
 
 COPY . .
-RUN npx prisma migrate deploy
-
-# Next 2 lines are needed only on initial deployment to seed db
 RUN npx prisma generate
-RUN npx prisma db seed
 RUN npm run build
-
-# Deploy built image
-
-FROM migrate AS production
-ARG DATABASE_URL
-# WORKDIR /app
-# COPY package*.json ./
-# RUN npm ci --quiet
-
-# COPY . .
-# RUN npx prisma generate
-# RUN npm run build
 
 EXPOSE 80
 
-CMD ["npm", "run", "start:prod"]
+# Run node directly (not via npm) so it receives SIGTERM and shuts down cleanly
+CMD ["node", "dist/main"]
 

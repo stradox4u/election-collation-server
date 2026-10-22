@@ -11,8 +11,10 @@ export class PollingUnitSeeder implements Seeder {
 
   async seed(): Promise<void> {
     // Check if polling units have been seeded, return if so
-    const existingPus = await this.prisma.pollingUnit.findMany();
-    if (existingPus.length > 0) {
+    const existingPu = await this.prisma.pollingUnit.findFirst({
+      select: { id: true },
+    });
+    if (existingPu) {
       return;
     }
 
