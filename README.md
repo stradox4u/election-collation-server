@@ -149,7 +149,7 @@ Host ports 5432 and 8000 must be free.
 | `PollingUnitSeeder` | `cleanedPUs.json` | 176,611 polling units |
 | `WardSeeder` | `statesAndLgas.json`, `allWards.json` | 37 states, 774 LGAs, 8,809 wards |
 | `PartySeeder` | List hard-coded in `src/seeders/party.seeder.ts` | 18 political parties |
-| `PresidentialElectionSeeder` | Data seeded above | One `Presidential` election dated 2023-02-25, linked to polling units and all parties |
+| `PresidentialElectionSeeder` | Data seeded above | One `Presidential` election dated 2023-02-25, linked to all 176,611 polling units and all 18 parties |
 
 Each seeder skips itself if its table already has at least one row, so running the seed again does nothing and takes about 2 seconds. The check is only for whether a row exists. If a seed run is interrupted partway, re-running it will not finish the job; empty the affected tables first.
 
@@ -193,12 +193,12 @@ Routes, from the controllers in `src/`:
 | GET | `/api/v1` | Returns `Hello World!`. Useful as a smoke check. |
 | GET | `/api/v1/election?type=<electionType>` | Lists elections with their parties. `type` (e.g. `Presidential`) is optional. |
 | POST | `/api/v1/election` | Creates an election from `electionType`, `electionDate` and `electionArea`. `electionArea` is a list of `state-lga-ward` codes in the zero-padded form stored on polling units (e.g. `01-10-01`); leave off trailing parts to cover a whole state or LGA. The new election is linked to the matching polling units and all parties. |
-| GET | `/api/v1/election/results?elId=<electionId>` | Total votes per party in that election, counting only its own results. Parties with no results yet show `0`. Returns 400 if `elId` is missing and 404 if no election has that id. |
+| GET | `/api/v1/election/results?elId=<electionId>` | Total votes for each party attached to the election, as `[{ "name": "A", "id": 1, "totalVotes": 120 }, ...]`. Only that election's results are counted, and parties with no results yet show `0`. Returns 400 if `elId` is missing or empty, and 404 if no election has that id. |
 | GET | `/api/v1/parties/:electionId` | Parties attached to an election. |
 | GET | `/api/v1/pollingunits?key=<key>` | With no `key`, all states. `key=<state>` returns a state with its LGAs, `<state>-<lga>` an LGA with its wards, and `<state>-<lga>-<ward>` that ward's polling units. Keys are numeric ids, e.g. `1-10-1`. |
-| POST | `/api/v1/results` | Submits a polling-unit result as `multipart/form-data`: `resultImage` (jpg, jpeg or png, up to 5 MB), `pollingunitId`, `electionId`, and `partyResults`, repeated once per party, each a JSON string such as `{"partyId":1,"votes":120}`. Uploads the image to S3, saves the result together with its party votes in one transaction, then broadcasts new totals. If the save fails, neither the result nor any of its votes is stored. |
+| POST | `/api/v1/results` | Submits a polling-unit result as `multipart/form-data`: `resultImage` (jpg, jpeg or png, up to 5 MB), `pollingunitId`, `electionId`, and one `partyResults[]` field per party, each a JSON string such as `{"partyId":1,"votes":120}`. Keep the `[]`: a lone `partyResults` field without it arrives as a string, and the request fails. The party results are parsed before anything is uploaded or saved. Then the image is uploaded to S3, and the result and its party votes are saved in one transaction, so either all of them are stored or none are. On success the server broadcasts the new totals and returns 201 with an empty body. For error responses, see [Known issues](#known-issues). |
 
-Socket.IO is served on the same port at the default path `/socket.io/`, outside the `api/v1` prefix. Its CORS origin is also `APP_FRONTEND_URL`. After each successful `POST /api/v1/results`, the server emits `voteCountsUpdated` to all clients with the same per-party totals that `/election/results` returns. A client `events` message is echoed back.
+Socket.IO is served on the same port at the default path `/socket.io/`, outside the `api/v1` prefix. Its CORS origin is also `APP_FRONTEND_URL`. After each successful `POST /api/v1/results`, the server emits `voteCountsUpdated` to all clients. The payload is the same per-party totals that `/election/results` returns, for the election the result belongs to. A client `events` message is echoed back.
 
 ## Deployment on Railway
 
@@ -215,7 +215,7 @@ How a deploy runs:
 
 1. **Build.** Railway builds the Dockerfile's final `production` stage (`node:18-alpine3.17`), which runs `npm ci`, `npx prisma generate` and `npm run build`. The build doesn't touch the database and needs no `DATABASE_URL`. `.dockerignore` keeps `node_modules`, `.env` and `dist` out of the build context.
 2. **Pre-deploy.** Railway runs `npm run migrate:deploy` in a container from the built image, with the service's variables and access to the private network. That runs `prisma migrate deploy`, then the seeder (`node dist/seeder`). On a database that is already populated this takes a few seconds: `No pending migrations to apply.`, and every seeder skips. If this step fails, the new deployment does not start.
-3. **Start.** The container runs `CMD ["/sbin/tini", "--", "node", "dist/main"]`. `tini` is PID 1 and passes SIGTERM on to node when Railway stops the container. `app.enableShutdownHooks()` then closes the HTTP server and disconnects Prisma, and the process exits. If the Railway service has a custom start command (for example `npm run start:prod`), remove it so the Dockerfile `CMD` applies. With npm as PID 1 the app never receives SIGTERM, so the container is killed (exit code 137).
+3. **Start.** The container runs `CMD ["/sbin/tini", "--", "node", "dist/main"]`. `tini` is PID 1 and passes SIGTERM on to node when Railway stops the container. `app.enableShutdownHooks()` then closes the Socket.IO and HTTP servers, Prisma disconnects in `onApplicationShutdown`, and node exits on the signal (exit code 143). If the Railway service has a custom start command (for example `npm run start:prod`), remove it so the Dockerfile `CMD` applies. With npm as PID 1, npm receives the SIGTERM but doesn't pass it on to node, so the container is killed (exit code 137).
 
 Service variables:
 
@@ -272,7 +272,9 @@ If the client in `node_modules/.prisma/client` was not regenerated for the insta
 ## Known issues
 
 - **The compose `seed` profile does not work.** `docker compose --profile seed up` fails with `service "db_seeder" depends on undefined service "collation_db"`, because `collation_db` is not in that profile. Even with `--profile dev` added, the build fails with `target stage "base" could not be found`, because the Dockerfile has only `dev` and `production` stages. The service's `command` is also commented out. Seed with `docker compose exec collation_server npx prisma db seed` instead, as shown above.
-- **`POST /api/v1/results` returns 500 for an unknown `partyId`.** The foreign-key error isn't turned into a client error. Nothing is saved to the database, but the result-sheet image has already been uploaded to S3, so it stays there with nothing pointing to it.
+- **`POST /api/v1/results` reports bad input as 500, and some failures leave an orphaned image.** The 500s come in two kinds:
+  - An unknown `partyId`, `pollingunitId` or `electionId` fails at the database write, and the app doesn't turn that error into a 4xx. The write is one transaction, so nothing is saved. The result-sheet image, however, has already been uploaded to S3 and stays there with nothing pointing to it.
+  - Malformed JSON in `partyResults`, or a lone `partyResults` field without `[]`, also returns 500. These fail before the upload, so nothing is left behind.
 
 ## Project layout
 
