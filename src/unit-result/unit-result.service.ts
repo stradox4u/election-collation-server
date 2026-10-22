@@ -17,6 +17,15 @@ export class UnitResultService {
   ) {}
 
   async saveUnitResult(data: CreateUnitResultDto) {
+    // Parse before uploading or writing anything, so bad input has no side effects
+    const partyResultsMapped = data.partyResults.map((partyResult) => {
+      const result = JSON.parse(partyResult);
+      return {
+        politicalPartyId: result.partyId,
+        voteCount: result.votes,
+      };
+    });
+
     const fileUploaded = await this.s3Service.uploadFile(
       data.resultImage.buffer,
       data.resultImage.mimetype,
@@ -27,7 +36,9 @@ export class UnitResultService {
       this.configService.get<string>('RESULT_IMAGES_PATH_PREFIX') +
       fileUploaded;
 
-    const unitResult = await this.prisma.unitResult.create({
+    // Prisma runs a nested write in one transaction, so the result and its
+    // party votes are saved together or not at all
+    await this.prisma.unitResult.create({
       data: {
         resultImage: resultImagePath,
         pollingUnit: {
@@ -40,20 +51,12 @@ export class UnitResultService {
             id: data.electionId,
           },
         },
+        politicalParties: {
+          createMany: {
+            data: partyResultsMapped,
+          },
+        },
       },
-    });
-
-    const partyResultsMapped = data.partyResults.map((partyResult) => {
-      const result = JSON.parse(partyResult);
-      return {
-        unitResultId: unitResult.id,
-        politicalPartyId: result.partyId,
-        voteCount: result.votes,
-      };
-    });
-
-    await this.prisma.politicalPartyUnitResult.createMany({
-      data: partyResultsMapped,
     });
     // Calculate totals and broadcast to client using websockets
     await this.broadcastNewTotals(data.electionId);
