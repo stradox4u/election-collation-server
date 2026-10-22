@@ -13,7 +13,7 @@ Stack:
 
 ## Prerequisites
 
-- Node.js 18. Both Dockerfile stages use Node 18 (`node:18` and `node:18-alpine3.17`). Node 20 also works for local development.
+- Node.js 24 LTS, 24.22.1 or later. Earlier releases have the Brotli decoder vulnerability CVE-2026-111497. Both Dockerfile stages pin it (`node:24.22.1-trixie` and `node:24.22.1-alpine3.24`), and `.nvmrc` pins it for `nvm use`. Node 20 is end-of-life and gets no fix for that vulnerability, so don't use it, even locally.
 - npm. Install with `npm ci` so you get the versions in `package-lock.json`.
 - A PostgreSQL database. These instructions were checked with PostgreSQL 15 and 16. docker-compose uses the untagged `postgres` image.
 - Docker with Compose v2, if you want to use `docker-compose.yml`.
@@ -213,7 +213,7 @@ The service deploys from the Dockerfile, as configured in `railway.json`:
 
 How a deploy runs:
 
-1. **Build.** Railway builds the Dockerfile's final `production` stage (`node:18-alpine3.17`), which runs `npm ci`, `npx prisma generate` and `npm run build`. The build doesn't touch the database and needs no `DATABASE_URL`. `.dockerignore` keeps `node_modules`, `.env` and `dist` out of the build context.
+1. **Build.** Railway builds the Dockerfile's final `production` stage (`node:24.22.1-alpine3.24`), which runs `npm ci`, `npx prisma generate` and `npm run build`. The build doesn't touch the database and needs no `DATABASE_URL`. `.dockerignore` keeps `node_modules`, `.env` and `dist` out of the build context.
 2. **Pre-deploy.** Railway runs `npm run migrate:deploy` in a container from the built image, with the service's variables and access to the private network. That runs `prisma migrate deploy`, then the seeder (`node dist/seeder`). On a database that is already populated this takes a few seconds: `No pending migrations to apply.`, and every seeder skips. If this step fails, the new deployment does not start.
 3. **Start.** The container runs `CMD ["/sbin/tini", "--", "node", "dist/main"]`. `tini` is PID 1 and passes SIGTERM on to node when Railway stops the container. `app.enableShutdownHooks()` then closes the Socket.IO and HTTP servers, Prisma disconnects in `onApplicationShutdown`, and node exits on the signal (exit code 143). If the Railway service has a custom start command (for example `npm run start:prod`), remove it so the Dockerfile `CMD` applies. With npm as PID 1, npm receives the SIGTERM but doesn't pass it on to node, so the container is killed (exit code 137).
 

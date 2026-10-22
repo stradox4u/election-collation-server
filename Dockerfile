@@ -1,6 +1,9 @@
+# Node 24 LTS. Keep both stages on 24.22.1 or later: it fixes the Brotli
+# decoder vulnerability CVE-2026-111497.
+
 # Build for development
 
-FROM node:18 AS dev
+FROM node:24.22.1-trixie AS dev
 WORKDIR /app
 COPY package*.json ./
 
@@ -20,8 +23,10 @@ COPY . ./
 # Migrations and seeding run in Railway's pre-deploy command (see railway.json),
 # where the database is reachable over the private network.
 
-FROM node:18-alpine3.17 AS production
-RUN apk add --no-cache tini
+FROM node:24.22.1-alpine3.24 AS production
+# Prisma 5 can't detect OpenSSL 3 on this Alpine release without the openssl
+# CLI, and falls back to an OpenSSL 1.1 engine that fails to load
+RUN apk add --no-cache tini openssl
 WORKDIR /app
 COPY package*.json ./
 
