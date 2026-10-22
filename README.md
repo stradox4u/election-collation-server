@@ -215,7 +215,7 @@ How a deploy runs:
 
 1. **Build.** Railway builds the Dockerfile's final `production` stage (`node:18-alpine3.17`), which runs `npm ci`, `npx prisma generate` and `npm run build`. The build doesn't touch the database and needs no `DATABASE_URL`. `.dockerignore` keeps `node_modules`, `.env` and `dist` out of the build context.
 2. **Pre-deploy.** Railway runs `npm run migrate:deploy` in a container from the built image, with the service's variables and access to the private network. That runs `prisma migrate deploy`, then the seeder (`node dist/seeder`). On a database that is already populated this takes a few seconds: `No pending migrations to apply.`, and every seeder skips. If this step fails, the new deployment does not start.
-3. **Start.** The container runs `CMD ["node", "dist/main"]`. Node is PID 1, so it receives SIGTERM when Railway stops the container, and `app.enableShutdownHooks()` disconnects Prisma cleanly. If the Railway service has a custom start command (for example `npm run start:prod`), remove it so the Dockerfile `CMD` applies. With npm as PID 1 the app doesn't shut down cleanly, and the container ends with exit code 137 (killed).
+3. **Start.** The container runs `CMD ["/sbin/tini", "--", "node", "dist/main"]`. `tini` is PID 1 and passes SIGTERM on to node when Railway stops the container. `app.enableShutdownHooks()` then closes the HTTP server and disconnects Prisma, and the process exits. If the Railway service has a custom start command (for example `npm run start:prod`), remove it so the Dockerfile `CMD` applies. With npm as PID 1 the app never receives SIGTERM, so the container is killed (exit code 137).
 
 Service variables:
 
@@ -247,7 +247,7 @@ docker run -d --name collation-app --network collation-net -p 8090:80 \
   collation-server
 
 curl http://localhost:8090/api/v1/election
-docker stop collation-app    # exits at once with code 0, because node gets the SIGTERM
+docker stop collation-app    # exits at once with code 143 (SIGTERM, after the shutdown hooks run)
 ```
 
 Remove everything afterwards (`-v` also deletes the Postgres container's data volume):
@@ -272,7 +272,6 @@ If the client in `node_modules/.prisma/client` was not regenerated for the insta
 ## Known issues
 
 - **The compose `seed` profile does not work.** `docker compose --profile seed up` fails with `service "db_seeder" depends on undefined service "collation_db"`, because `collation_db` is not in that profile. Even with `--profile dev` added, the build fails with `target stage "base" could not be found`, because the Dockerfile has only `dev` and `production` stages. The service's `command` is also commented out. Seed with `docker compose exec collation_server npx prisma db seed` instead, as shown above.
-- **The seeded Presidential election skips states 01 to 09.** `PresidentialElectionSeeder` looks up polling units by state `"1"` to `"37"`, but polling-unit state codes are zero-padded (`"01"`). The election is linked to 137,332 of the 176,611 polling units.
 - **`GET /api/v1/election/results` returns 500 until every party in the election has a result.** It reduces each party's results without an initial value, which throws `Reduce of empty array with no initial value` when a party has none. `POST /api/v1/results` computes the same totals to broadcast them, so in that state it also returns 500, after the result has already been saved. The totals also add up a party's results across all elections, not only the one in `elId`.
 
 ## Project layout
