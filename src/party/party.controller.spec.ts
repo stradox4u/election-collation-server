@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PartyController } from './party.controller';
+import { PartyService } from './party.service';
 
 describe('PartyController', () => {
   let controller: PartyController;
@@ -7,6 +8,9 @@ describe('PartyController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PartyController],
+      providers: [
+        { provide: PartyService, useValue: { getElectionParties: jest.fn() } },
+      ],
     }).compile();
 
     controller = module.get<PartyController>(PartyController);

@@ -8,8 +8,10 @@ export class PartySeeder implements Seeder {
 
   async seed(): Promise<void> {
     // Check if parties have been seeded, return if so
-    const existingParties = await this.prisma.politicalParty.findMany();
-    if (existingParties.length > 0) {
+    const existingParty = await this.prisma.politicalParty.findFirst({
+      select: { id: true },
+    });
+    if (existingParty) {
       return;
     }
 

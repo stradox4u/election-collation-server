@@ -10,8 +10,10 @@ export class WardSeeder implements Seeder {
 
   async seed(): Promise<void> {
     // Check if wards have been seeded, return if so
-    const existingWards = await this.prisma.ward.findMany();
-    if (existingWards.length > 0) {
+    const existingWard = await this.prisma.ward.findFirst({
+      select: { id: true },
+    });
+    if (existingWard) {
       return;
     }
 
