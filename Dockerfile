@@ -21,6 +21,7 @@ COPY . ./
 # where the database is reachable over the private network.
 
 FROM node:18-alpine3.17 AS production
+RUN apk add --no-cache tini
 WORKDIR /app
 COPY package*.json ./
 
@@ -32,6 +33,7 @@ RUN npm run build
 
 EXPOSE 80
 
-# Run node directly (not via npm) so it receives SIGTERM and shuts down cleanly
-CMD ["node", "dist/main"]
+# tini runs as PID 1 and forwards SIGTERM to node (npm would not), and node
+# not being PID 1 means it exits once Nest finishes its shutdown hooks
+CMD ["/sbin/tini", "--", "node", "dist/main"]
 
