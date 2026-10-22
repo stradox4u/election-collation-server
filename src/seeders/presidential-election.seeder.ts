@@ -30,7 +30,8 @@ export class PresidentialElectionSeeder implements Seeder {
     }
     const electionAreas = [];
     for (let i = 1; i <= 37; i++) {
-      electionAreas.push(i.toString());
+      // Polling unit state codes are zero-padded ('01' to '37')
+      electionAreas.push(i.toString().padStart(2, '0'));
     }
 
     const relatedPus: { id: string }[] = [];
