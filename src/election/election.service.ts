@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
   CreateElectionDto,
@@ -115,6 +115,11 @@ export class ElectionService {
   }
 
   async getElectionResults(elId: string) {
+    // Without an id, findFirst would match an arbitrary election
+    if (!elId) {
+      throw new HttpException('elId is required', HttpStatus.BAD_REQUEST);
+    }
+
     const election = await this.prisma.election.findFirst({
       where: {
         id: elId,
@@ -126,11 +131,6 @@ export class ElectionService {
               select: {
                 id: true,
                 name: true,
-                unitResults: {
-                  select: {
-                    voteCount: true,
-                  },
-                },
               },
             },
           },
@@ -138,15 +138,31 @@ export class ElectionService {
       },
     });
 
+    if (!election) {
+      throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
+    }
+
+    // Sum each party's votes from this election's unit results only
+    const voteTotals = await this.prisma.politicalPartyUnitResult.groupBy({
+      by: ['politicalPartyId'],
+      where: {
+        unitResult: {
+          electionId: elId,
+        },
+      },
+      _sum: {
+        voteCount: true,
+      },
+    });
+    const totalsByParty = new Map(
+      voteTotals.map((total) => [total.politicalPartyId, total._sum.voteCount]),
+    );
+
     const summedVotes = election.politicalParties.map((party) => {
       return {
         name: party.politicalParty.name,
         id: party.politicalParty.id,
-        totalVotes: party.politicalParty.unitResults.reduce(
-          (prevVal, currVal) => {
-            return { voteCount: prevVal.voteCount + currVal.voteCount };
-          },
-        ).voteCount,
+        totalVotes: totalsByParty.get(party.politicalParty.id) ?? 0,
       };
     });
 
